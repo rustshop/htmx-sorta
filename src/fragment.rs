@@ -1,7 +1,3 @@
-use axum::body::Full;
-use axum::response::IntoResponse;
-use hyper::http::response;
-use hyper::{header, StatusCode};
 use maud::{html, Markup, DOCTYPE};
 
 use crate::db::Item;
@@ -80,93 +76,6 @@ pub fn page(title: &str, content: Markup) -> Markup {
     }
 }
 
-pub(crate) fn post(id: &str, title: &str, body: &str) -> Markup {
-    html! {
-        article .post #id {
-            h2 { (title) }
-
-            p {
-                (body)
-            }
-
-            button hx-get={ "/post/"(id)"/edit" } hx-swap="outerHTML" hx-target={ "closest article" } { "Edit" }
-        }
-    }
-}
-
-pub(crate) fn post_edit_form(id: &str, title: &str, body: &str) -> Markup {
-    html! {
-        article .post #id {
-            form {
-                input ."border rounded p-2" type="text" value=(title);
-                textarea wrap="soft" { (body) }
-                button hx-post={ "/post/"(id) } hx-swap="outerHTML" hx-target={ "closest article" } { "Submit" }
-            }
-        }
-    }
-}
-
-pub trait ResponseBuilderExt {
-    type Response;
-    fn cache_static(self) -> Self;
-    fn cache_nostore(self) -> Self;
-    fn status_not_found(self) -> Self;
-
-    fn body_html(self, html: maud::PreEscaped<String>) -> Self::Response;
-    fn body_static_str(self, content_type: &str, content: &'static str)
-        -> axum::response::Response;
-    fn body_static_bytes(
-        self,
-        content_type: &str,
-        content: &'static [u8],
-    ) -> axum::response::Response;
-}
-
-impl ResponseBuilderExt for response::Builder {
-    type Response = axum::response::Response;
-    fn cache_static(self) -> Self {
-        self.header(
-            "Cache-Control",
-            "max-age=86400, stale-while-revalidate=86400",
-        )
-    }
-    fn cache_nostore(self) -> Self {
-        self.header("Cache-Control", "nostore")
-    }
-
-    fn status_not_found(self) -> Self {
-        self.status(StatusCode::NOT_FOUND)
-    }
-
-    fn body_html(self, html: maud::PreEscaped<String>) -> Self::Response {
-        self.header(header::CONTENT_TYPE, "text/html; charset=utf-8")
-            .body(html.into_string())
-            .unwrap()
-            .into_response()
-    }
-
-    fn body_static_str(
-        self,
-        content_type: &str,
-        content: &'static str,
-    ) -> axum::response::Response {
-        self.header(header::CONTENT_TYPE, content_type)
-            .body(Full::from(content))
-            .unwrap()
-            .into_response()
-    }
-    fn body_static_bytes(
-        self,
-        content_type: &str,
-        content: &'static [u8],
-    ) -> axum::response::Response {
-        self.header(header::CONTENT_TYPE, content_type)
-            .body(Full::from(content))
-            .unwrap()
-            .into_response()
-    }
-}
-
 impl Item {
     pub fn sortable_handle_markup(&self) -> Markup {
         html! {
@@ -204,5 +113,50 @@ impl Item {
                 }
             }
         }
+    }
+}
+
+pub trait ResponseBuilderExt {
+    type Response;
+    fn cache_static(self) -> Self;
+    fn cache_nostore(self) -> Self;
+    fn status_not_found(self) -> Self;
+
+    fn body_html(self, html: maud::PreEscaped<String>) -> Self::Response;
+    fn body_static_str(self, content_type: &str, content: &'static str) -> Self::Response;
+    fn body_static_bytes(self, content_type: &str, content: &'static [u8]) -> Self::Response;
+}
+
+impl ResponseBuilderExt for astra::ResponseBuilder {
+    type Response = astra::Response;
+    fn cache_static(self) -> Self {
+        self.header(
+            "Cache-Control",
+            "max-age=86400, stale-while-revalidate=86400",
+        )
+    }
+    fn cache_nostore(self) -> Self {
+        self.header("Cache-Control", "nostore")
+    }
+
+    fn status_not_found(self) -> Self {
+        self.status(hyper::StatusCode::NOT_FOUND)
+    }
+
+    fn body_html(self, html: maud::PreEscaped<String>) -> Self::Response {
+        self.header("Content-Type", "text/html")
+            .body(astra::Body::new(html.into_string()))
+            .unwrap()
+    }
+
+    fn body_static_str(self, content_type: &str, content: &'static str) -> Self::Response {
+        self.header("Content-Type", content_type)
+            .body(astra::Body::new(content))
+            .unwrap()
+    }
+    fn body_static_bytes(self, content_type: &str, content: &'static [u8]) -> Self::Response {
+        self.header("Content-Type", content_type)
+            .body(astra::Body::new(content))
+            .unwrap()
     }
 }

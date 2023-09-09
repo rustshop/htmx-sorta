@@ -16,21 +16,20 @@ codegen-units = 1
 
 [dependencies]
 anyhow = "1.0.75"
+astra = { git = "https://github.com/dpc/astra", rev = "f5ec32268e9d20f0c4d18f25691dba2b1b7c5ac1" }
+bincode = "1.3.3"
+dotenv = "0.15.0"
+clap = { version = "4.4.0", features = ["derive"] }
 hyper = "0.14.27"
 maud = { version = "0.25.0", features = [ "axum" ] }
+matchit = "0.7.2"
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
 redb = "1.1.0"
-dotenv = "0.15.0"
-clap = { version = "4.4.0", features = ["derive"] }
-lettre = { version = "0.10.4", default-features = false, features = ["rustls-tls", "smtp-transport", "hostname", "builder"]}
 tap = "1.0.1"
-axum = "0.6.20"
-tokio = { version = "1.32.0", features = ["macros", "rt-multi-thread"] }
-tower-http = { version = "0.4.3", features = ["tracing", "trace"] }
-bincode = "1.3.3"
 serde = { version = "1.0.188", features = ["derive"] }
 resiter = "0.5.0"
+serde_json = "1.0.105"
 
 [dev-dependencies]
 quickcheck = "1.0.3"
