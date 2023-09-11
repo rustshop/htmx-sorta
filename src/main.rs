@@ -2,6 +2,7 @@ mod db;
 mod fragment;
 mod opts;
 mod rate_limit;
+mod response;
 mod routes;
 mod service;
 mod sortid;
@@ -27,7 +28,7 @@ fn main() -> anyhow::Result<()> {
 
     let server = astra::Server::bind(opts.listen);
 
-    info!("Listening on {}", server.local_addr().unwrap()?);
+    info!("Listening on {}", server.local_addr()?);
     server
         .serve_clone(service)
         .context("Failed to start http server")?;

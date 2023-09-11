@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use astra::ResponseBuilder;
 use hyper::{Response, StatusCode};
 use maud::html;
@@ -5,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::db::{Item, ItemData, ItemId};
 use crate::fragment;
-use crate::fragment::ResponseBuilderExt;
+use crate::response::ResponseBuilderExt;
 use crate::service::Service;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -21,18 +23,7 @@ impl Service {
         _req: &mut astra::Request,
         _: &matchit::Params,
     ) -> anyhow::Result<astra::Response> {
-        Ok(ResponseBuilder::new().body_html(fragment::page(
-            "home",
-            html! {
-                div ."container flex" {
-                    div ."shink p-1" {
-                        (Item::items_form_markup("items", &self.read_items()?))
-                    }
-                    form #item-edit ."p-1" {
-                    }
-                }
-            },
-        )))
+        Ok(ResponseBuilder::new().body_html(self.home_page()?))
     }
 
     pub fn item_order(
@@ -40,9 +31,20 @@ impl Service {
         req: &mut astra::Request,
         _: &matchit::Params,
     ) -> anyhow::Result<astra::Response> {
-        let item_order: ItemOrder = serde_json::from_reader(req.body_mut().reader())?;
+        let item_order: ItemOrder = serde_urlencoded::from_reader(req.body_mut().reader())?;
         self.change_item_order(item_order.prev, item_order.curr, item_order.next)?;
         Ok(ResponseBuilder::new().body_static_bytes("foo", &[]))
+    }
+
+    pub fn item_update(
+        &self,
+        req: &mut astra::Request,
+        params: &matchit::Params,
+    ) -> anyhow::Result<astra::Response> {
+        let item_id = ItemId::from_str(params.get("id").expect("id param not in the path params"))?;
+        let item_data: ItemData = serde_urlencoded::from_reader(req.body_mut().reader())?;
+        self.update_item(item_id, item_data)?;
+        Ok(ResponseBuilder::new().body_html(self.home_page()?))
     }
 
     pub fn item_create(
@@ -50,10 +52,10 @@ impl Service {
         req: &mut astra::Request,
         _: &matchit::Params,
     ) -> anyhow::Result<astra::Response> {
-        let item_data: ItemData = serde_json::from_reader(req.body_mut().reader())?;
+        let item_data: ItemData = serde_urlencoded::from_reader(req.body_mut().reader())?;
         self.create_item(item_data)?;
         Ok(ResponseBuilder::new().body_html(html! {
-            (Item::items_form_markup("items", &self.read_items()?))
+            (Item::items_form("items", &self.read_items()?))
         }))
     }
 
@@ -62,15 +64,9 @@ impl Service {
         _req: &mut astra::Request,
         params: &matchit::Params,
     ) -> anyhow::Result<astra::Response> {
-        let item_id: ItemId =
-            serde_json::from_str(params.get("id").expect("id param not in the path params"))?;
-        let item = self.load_item(item_id)?;
-        Ok(ResponseBuilder::new().body_html(html! {
-            form #item-edit ."p-1" {
-                input type="text" name="title" placeholder="Title..." ."border rounded p-1 m-1 w-full" value=(item.title);
-                textarea  name="body" placeholder="Body..."  ."border rounded p-1 m-1 w-full h-24" { (item.body) }
-            }
-        }))
+        let item_id = ItemId::from_str(params.get("id").expect("id param not in the path params"))?;
+        let item_data = self.load_item(item_id)?;
+        Ok(ResponseBuilder::new().body_html(fragment::item_edit_form(Some((item_id, item_data)))))
     }
 
     pub fn favicon_ico(
@@ -90,7 +86,7 @@ impl Service {
     ) -> anyhow::Result<astra::Response> {
         Ok(Response::builder()
             // .cache_static()
-            .body_static_str("text/css", concat!("")))
+            .body_static_str("text/css", concat!(include_str!("../static/style.css"))))
     }
 
     pub fn script_js(
@@ -103,6 +99,7 @@ impl Service {
             .body_static_str(
                 "application/javascript",
                 concat!(
+                    include_str!("../static/script-twind.js"),
                     include_str!("../static/script.js"),
                     include_str!("../static/script-htmx-send-error.js"),
                 ),

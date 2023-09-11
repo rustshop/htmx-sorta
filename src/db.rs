@@ -1,5 +1,7 @@
 use std::fmt::Write as _;
+use std::str::FromStr;
 
+use anyhow::bail;
 use redb::{RedbKey, RedbValue, TableDefinition};
 use serde::{Deserialize, Serialize};
 
@@ -11,6 +13,23 @@ pub struct ItemId(pub u64);
 impl ItemId {
     pub(crate) fn increment(&self) -> Self {
         Self(self.0 + 1)
+    }
+}
+
+impl FromStr for ItemId {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if !s.starts_with("i-") {
+            bail!("does not start with 'i-'");
+        }
+
+        Ok(Self(
+            s.split_at(2)
+                .1
+                .parse()
+                .map_err(|_e| anyhow::format_err!("invalid number"))?,
+        ))
     }
 }
 
@@ -29,18 +48,8 @@ impl<'de> Deserialize<'de> for ItemId {
         D: serde::Deserializer<'de>,
     {
         use serde::de::Error;
-        String::deserialize(deserializer).and_then(|s| {
-            if !s.starts_with("i-") {
-                return Err(Error::custom("does not start with 'i-'"));
-            }
-
-            Ok(Self(
-                s.split_at(2)
-                    .1
-                    .parse()
-                    .map_err(|_e| Error::custom("invalid number"))?,
-            ))
-        })
+        String::deserialize(deserializer)
+            .and_then(|s| <ItemId as FromStr>::from_str(&s).map_err(Error::custom))
     }
 }
 

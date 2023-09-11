@@ -43,27 +43,11 @@ impl Service {
         router_get.insert("/", Self::home)?;
         router_post.insert("/item", Self::item_create)?;
         router_post.insert("/item/order", Self::item_order)?;
+        router_post.insert("/item/:id", Self::item_update)?;
         router_get.insert("/item/:id/edit", Self::item_edit)?;
         router_get.insert("/favicon.ico", Self::favicon_ico)?;
         router_get.insert("/style.css", Self::style_css)?;
         router_get.insert("/script.js", Self::script_js)?;
-
-        // let app = axum::Router::new()
-        //     .route("/", get(routes::home))
-        //     .route("/item", post(routes::item_create))
-        //     .route("/item/order", post(routes::item_order))
-        //     .route("/item/:id/edit", get(routes::item_edit))
-        //     .route("/favicon.ico", get(routes::favicon_ico))
-        //     .route("/style.css", get(routes::style_css))
-        //     .route("/script.js", get(routes::script_js))
-        //     .route("/count", post(routes::count))
-        //     .route("/user/:id", get(routes::get_user))
-        //     .route("/post/:id", post(routes::save_post))
-        //     .route("/post/:id/edit", get(routes::edit_post))
-        //     .fallback(routes::not_found_404)
-        //     .with_state(service.clone())
-        //     .layer(middleware::from_fn_with_state(service, rate_limit))
-        //     .layer(TraceLayer::new_for_http());
 
         let db = redb::Database::create(&opts.db)
             .with_context(|| format!("Failed to open database at {}", opts.db.display()))?;
@@ -82,9 +66,9 @@ impl Service {
     fn route(&self, req: &mut astra::Request) -> astra::Response {
         let path = req.uri().path().to_owned();
         // Try to find the handler for the requested path
-        match (match req.method() {
-            &Method::GET => &self.router_get,
-            &Method::POST => &self.router_post,
+        match (match *req.method() {
+            Method::GET => &self.router_get,
+            Method::POST => &self.router_post,
             _ => return routes::not_found_404(),
         })
         .at(&path)
@@ -319,6 +303,27 @@ impl Service {
                 .value();
 
             Ok(item.data)
+        })
+    }
+
+    pub(crate) fn update_item(&self, item_id: ItemId, item_data: ItemData) -> anyhow::Result<()> {
+        self.with_db_write(|dbtx| {
+            let mut item_table = dbtx.open_table(ITEM_TABLE)?;
+
+            let item = item_table
+                .get(item_id)?
+                .ok_or_else(|| format_err!("item not found"))?
+                .value();
+
+            item_table.insert(
+                item_id,
+                ItemValue {
+                    sort_id: item.sort_id,
+                    data: item_data,
+                },
+            )?;
+
+            Ok(())
         })
     }
 }
