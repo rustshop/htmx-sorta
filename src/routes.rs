@@ -136,6 +136,12 @@ pub fn not_found_404() -> astra::Response {
     ))
 }
 
+pub fn internal_error() -> astra::Response {
+    Response::builder()
+        .status(StatusCode::INTERNAL_SERVER_ERROR)
+        .body_static_str("text/plain", "Internal Server Error")
+}
+
 pub fn too_many_requests_429() -> astra::Response {
     Response::builder()
         .cache_nostore()

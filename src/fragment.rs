@@ -43,7 +43,7 @@ pub fn page(title: &str, content: Markup) -> Markup {
 
     html! {
         (head(title))
-        body ."container relative mx-auto" {
+        body ."container relative mx-auto !block" style="display: none" {
             div #"gray-out-page" ."fixed inset-0 send-error-hidden"  {
                 div ."relative z-50 bg-white mx-auto max-w-sm p-10 flex flex-center flex-col gap-2" {
                     p { "Connection error" }

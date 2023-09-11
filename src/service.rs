@@ -1,6 +1,6 @@
+use std::net;
 use std::net::Ipv4Addr;
 use std::sync::Arc;
-use std::{net, unimplemented};
 
 use anyhow::format_err;
 use db::{Item, ItemData, ItemId, ITEM_TABLE};
@@ -10,7 +10,7 @@ use matchit::Match;
 use rate_limit::{conventional, pre};
 use redb::{ReadableTable, Table};
 use resiter::Map;
-use tracing::{debug, info};
+use tracing::{debug, info, warn};
 
 use crate::db::{Database, ItemValue, ITEM_ORDER_TABLE};
 use crate::sortid::SortId;
@@ -56,33 +56,32 @@ impl Service {
             router_get,
             router_post,
             pre_rate_limiter: pre::FastPreRateLimiter::new(20, 60),
-            rate_limiter: conventional::RateLimiter::new(10, 60),
+            rate_limiter: conventional::RateLimiter::new(60, 60),
         }
         .init_tables()
     }
 
     fn route(&self, req: &mut astra::Request) -> astra::Response {
         let path = req.uri().path().to_owned();
-
-        match (match *req.method() {
+        let (handler, params) = match (match *req.method() {
             Method::GET => &self.router_get,
             Method::POST => &self.router_post,
             _ => return routes::not_found_404(),
         })
         .at(&path)
         {
-            // If a handler is found, insert the route parameters into the request
-            // extensions, and call it
             Ok(Match { value, params }) => {
-                let params = params.clone();
-                match (value)(self, req, &params) {
-                    Ok(o) => o,
-                    Err(e) => unimplemented!("internal error response: {e:?}"),
-                }
+                let params = params.to_owned();
+                (value, params)
             }
             // Otherwise return a 404
-            Err(_) => routes::not_found_404(),
-        }
+            Err(_) => return routes::not_found_404(),
+        };
+
+        (handler)(self, req, &params).unwrap_or_else(|error| {
+            warn!(%error, "Route handler error");
+            routes::internal_error()
+        })
     }
 
     fn handle_session(
