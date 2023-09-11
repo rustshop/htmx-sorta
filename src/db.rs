@@ -1,11 +1,54 @@
 use std::fmt::Write as _;
+use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::Arc;
 
-use anyhow::bail;
-use redb::{RedbKey, RedbValue, TableDefinition};
+use anyhow::{bail, Context};
+use redb::{ReadTransaction, RedbKey, RedbValue, TableDefinition, WriteTransaction};
 use serde::{Deserialize, Serialize};
 
 use crate::sortid::SortId;
+
+#[derive(Clone)]
+pub struct Database(Arc<redb::Database>);
+
+impl From<redb::Database> for Database {
+    fn from(db: redb::Database) -> Self {
+        Self(Arc::new(db))
+    }
+}
+
+impl Database {
+    pub fn write_with<R>(
+        &self,
+        f: impl FnOnce(&'_ WriteTransaction<'_>) -> anyhow::Result<R>,
+    ) -> anyhow::Result<R> {
+        let mut dbtx = self.0.begin_write()?;
+
+        let res = f(&mut dbtx)?;
+
+        dbtx.commit()?;
+
+        Ok(res)
+    }
+
+    pub fn read_with<R>(
+        &self,
+        f: impl FnOnce(&'_ ReadTransaction<'_>) -> anyhow::Result<R>,
+    ) -> anyhow::Result<R> {
+        let mut dbtx = self.0.begin_read()?;
+
+        let res = f(&mut dbtx)?;
+
+        Ok(res)
+    }
+
+    pub fn open(path: &PathBuf) -> anyhow::Result<Database> {
+        Ok(Self::from(redb::Database::create(path).with_context(
+            || format!("Failed to open database at {}", path.display()),
+        )?))
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 pub struct ItemId(pub u64);
@@ -72,7 +115,7 @@ pub struct ItemValue {
     pub data: ItemData,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ItemData {
     pub title: String,
     pub body: String,

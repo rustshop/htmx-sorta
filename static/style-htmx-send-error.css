@@ -1,0 +1,9 @@
+.send-error-hidden {
+  display: none;
+}
+
+.send-error-showing {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

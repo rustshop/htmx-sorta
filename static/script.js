@@ -14,6 +14,7 @@ htmx.onLoad(function(content) {
             const next = to.children[evt.newIndex + 1]?.id;
             toParent.setAttribute("hx-vals", JSON.stringify({ prev, curr, next }));
             toParent.dispatchEvent(new Event("changed"));
+            toParent.setAttribute("hx-vals", "");
           }
       });
     }

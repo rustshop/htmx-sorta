@@ -44,11 +44,12 @@ pub fn page(title: &str, content: Markup) -> Markup {
     html! {
         (head(title))
         body ."container relative mx-auto" {
-            div #"gray-out-page" .hidden {
-                button hx-get="/" hx-target="body" hx-swap="outerHTML" { "Reload" }
-            }
-            div #"htmx-send-error" .hidden {
-                "Error sending the request"
+            div #"gray-out-page" ."fixed inset-0 send-error-hidden"  {
+                div ."relative z-50 bg-white mx-auto max-w-sm p-10 flex flex-center flex-col gap-2" {
+                    p { "Connection error" }
+                    button ."rounded bg-red-700 text-white px-2 py-1" hx-get="/" hx-target="body" hx-swap="outerHTML" { "Reload" }
+                }
+                div ."inset-0 absolute z-0 bg-gray-500 opacity-50" {}
             }
             (header())
 
@@ -61,12 +62,12 @@ pub fn page(title: &str, content: Markup) -> Markup {
 }
 
 impl Service {
-    pub fn home_page(&self) -> anyhow::Result<Markup> {
+    pub fn home_page(&self, item: Option<(ItemId, ItemData)>) -> anyhow::Result<Markup> {
         Ok(page(
             "home",
             html! {
                 div ."container flex flex-col md:flex-row-reverse" {
-                    (item_edit_form(None))
+                    (item_edit_form(item))
                     div ."container shrink grow p-1" {
                         (Item::items_form("items", &self.read_items()?))
                     }
@@ -81,8 +82,8 @@ impl Item {
         html! {
             div #(dom_id) {
                 form ."items-new flex" hx-post="/item" hx-target="closest div" hx-swap="outerHTML" {
-                    input ."border shadow-inner rounded m-1 p-1 rounded w-full" type="text" name="title" value="" autocomplete="off" {}
-                    input ."border shadow-inner rounded m-1 p-1 rounded w-full" type="text" name="body" value="" autocomplete="off" {}
+                    input ."border shadow-inner shadow-gray-400 rounded m-1 p-1 rounded w-full" type="text" name="title" value="" autocomplete="off" {}
+                    input ."border shadow-inner shadow-gray-400 rounded m-1 p-1 rounded w-full" type="text" name="body" value="" autocomplete="off" {}
                     input ."hidden" type="submit" {}
                 }
 
@@ -108,7 +109,7 @@ impl Item {
         html! {
             div."container p-1 even:bg-slate-50 group flex justify-between gap-1" #{ (self.id) } {
                 div.handle { "<>" };
-                div."w-full" hx-trigger="click" hx-get={ "/item/" (self.id) "/edit" } hx-target="#item-edit" hx-swap="outerHTML" {
+                div."w-full" hx-trigger="click" hx-get={ "/item/" (self.id) } hx-push-url="true" hx-select="#item-edit" hx-target="#item-edit" hx-swap="outerHTML" {
                      span ."group-hover:underline" {
                          (self.data.title)
                      }
@@ -121,13 +122,13 @@ impl Item {
 pub fn item_edit_form(item: Option<(ItemId, ItemData)>) -> Markup {
     html! {
         @if let Some((item_id, item_data)) = item {
-            div #item-edit ."container p-1" {
-                input type="text" name="title" placeholder="Title..." ."border shadow-inner rounded my-1 py-1 px-2 w-full" value=(item_data.title);
-                textarea  name="body" placeholder="Body..."  ."border shadow-inner rounded my-1 py-1 px-2 h-24 w-full" { (item_data.body) }
-                button ."px-2 py-1 my-1 shadow-md bg-primary-btn rounded-md" hx-post={ "/item/" (item_id) } hx-target="#items" hx-select="#items" hx-swap="outerHTML" { "Save" }
+            form #item-edit ."container p-1"  hx-post={ "/item/" (item_id) } hx-trigger="submit, click from:find button, keydown[ctrlKey && keyCode==13]" hx-target="#items" hx-select="#items" hx-swap="outerHTML" {
+                input type="text" name="title" placeholder="Title..." ."border shadow-inner shadow-gray-400 rounded my-1 py-1 px-2 w-full" value=(item_data.title);
+                textarea  name="body" placeholder="Body..."  ."border shadow-inner shadow-gray-400 rounded my-1 py-1 px-2 h-24 w-full" { (item_data.body) }
+                button ."px-2 py-1 my-1 shadow-md bg-primary-btn rounded-md" { "Save" }
             }
         } @else {
-            div #item-edit ."container hidden" {
+            form #item-edit ."container hidden" {
             }
         }
     }

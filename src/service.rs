@@ -2,17 +2,17 @@ use std::net::Ipv4Addr;
 use std::sync::Arc;
 use std::{net, unimplemented};
 
-use anyhow::{format_err, Context};
+use anyhow::format_err;
 use db::{Item, ItemData, ItemId, ITEM_TABLE};
 use hyper::http::HeaderValue;
 use hyper::{header, Method};
 use matchit::Match;
 use rate_limit::{conventional, pre};
-use redb::{ReadTransaction, ReadableTable, Table, WriteTransaction};
+use redb::{ReadableTable, Table};
 use resiter::Map;
 use tracing::{debug, info};
 
-use crate::db::{ItemValue, ITEM_ORDER_TABLE};
+use crate::db::{Database, ItemValue, ITEM_ORDER_TABLE};
 use crate::sortid::SortId;
 use crate::{db, opts, rate_limit, routes};
 
@@ -28,12 +28,12 @@ type State = ();
 
 #[derive(Clone)]
 pub struct Service {
-    pub(crate) _state: Arc<State>,
-    __db: Arc<redb::Database>,
+    _state: Arc<State>,
+    db: Database,
     router_get: Router,
     router_post: Router,
-    pub(crate) pre_rate_limiter: pre::FastPreRateLimiter,
-    pub(crate) rate_limiter: conventional::RateLimiter,
+    pre_rate_limiter: pre::FastPreRateLimiter,
+    rate_limiter: conventional::RateLimiter,
 }
 
 impl Service {
@@ -43,18 +43,16 @@ impl Service {
         router_get.insert("/", Self::home)?;
         router_post.insert("/item", Self::item_create)?;
         router_post.insert("/item/order", Self::item_order)?;
+        router_get.insert("/item/:id", Self::item_get)?;
         router_post.insert("/item/:id", Self::item_update)?;
         router_get.insert("/item/:id/edit", Self::item_edit)?;
         router_get.insert("/favicon.ico", Self::favicon_ico)?;
         router_get.insert("/style.css", Self::style_css)?;
         router_get.insert("/script.js", Self::script_js)?;
 
-        let db = redb::Database::create(&opts.db)
-            .with_context(|| format!("Failed to open database at {}", opts.db.display()))?;
-
         Self {
             _state: Default::default(),
-            __db: Arc::new(db),
+            db: Database::open(&opts.db)?,
             router_get,
             router_post,
             pre_rate_limiter: pre::FastPreRateLimiter::new(20, 60),
@@ -65,7 +63,7 @@ impl Service {
 
     fn route(&self, req: &mut astra::Request) -> astra::Response {
         let path = req.uri().path().to_owned();
-        // Try to find the handler for the requested path
+
         match (match *req.method() {
             Method::GET => &self.router_get,
             Method::POST => &self.router_post,
@@ -131,32 +129,8 @@ impl Service {
         )
     }
 
-    pub fn with_db_write<R>(
-        &self,
-        f: impl FnOnce(&'_ WriteTransaction<'_>) -> anyhow::Result<R>,
-    ) -> anyhow::Result<R> {
-        let mut dbtx = self.__db.begin_write()?;
-
-        let res = f(&mut dbtx)?;
-
-        dbtx.commit()?;
-
-        Ok(res)
-    }
-
-    pub fn with_db_read<R>(
-        &self,
-        f: impl FnOnce(&'_ ReadTransaction<'_>) -> anyhow::Result<R>,
-    ) -> anyhow::Result<R> {
-        let mut dbtx = self.__db.begin_read()?;
-
-        let res = f(&mut dbtx)?;
-
-        Ok(res)
-    }
-
     pub fn init_tables(self) -> anyhow::Result<Self> {
-        self.with_db_write(|dbtx| {
+        self.db.write_with(|dbtx| {
             let _ = dbtx.open_table(ITEM_TABLE)?;
             let _ = dbtx.open_table(ITEM_ORDER_TABLE)?;
             Ok(())
@@ -166,7 +140,7 @@ impl Service {
     }
 
     pub fn read_items(&self) -> anyhow::Result<Vec<Item>> {
-        let mut items = self.with_db_read(|dbtx| {
+        let mut items = self.db.read_with(|dbtx| {
             Ok(dbtx
                 .open_table(ITEM_TABLE)?
                 .iter()?
@@ -212,7 +186,7 @@ impl Service {
     }
 
     pub fn create_item(&self, item_data: ItemData) -> anyhow::Result<()> {
-        self.with_db_write(|dbtx| {
+        self.db.write_with(|dbtx| {
             let mut item_order_table = dbtx.open_table(ITEM_ORDER_TABLE)?;
             let sort_id = self.get_front_item_sort_id(&item_order_table)?;
 
@@ -236,7 +210,7 @@ impl Service {
         curr_id: ItemId,
         next_id: Option<ItemId>,
     ) -> anyhow::Result<()> {
-        self.with_db_write(|dbtx| {
+        self.db.write_with(|dbtx| {
             let mut item_table = dbtx.open_table(ITEM_TABLE)?;
             let curr = item_table
                 .get(curr_id)?
@@ -295,7 +269,7 @@ impl Service {
     }
 
     pub fn load_item(&self, item_id: ItemId) -> anyhow::Result<ItemData> {
-        self.with_db_read(|dbtx| {
+        self.db.read_with(|dbtx| {
             let item_table = dbtx.open_table(ITEM_TABLE)?;
             let item = item_table
                 .get(item_id)?
@@ -306,8 +280,8 @@ impl Service {
         })
     }
 
-    pub(crate) fn update_item(&self, item_id: ItemId, item_data: ItemData) -> anyhow::Result<()> {
-        self.with_db_write(|dbtx| {
+    pub(crate) fn update_item(&self, item_id: ItemId, item_data: &ItemData) -> anyhow::Result<()> {
+        self.db.write_with(|dbtx| {
             let mut item_table = dbtx.open_table(ITEM_TABLE)?;
 
             let item = item_table
@@ -319,7 +293,7 @@ impl Service {
                 item_id,
                 ItemValue {
                     sort_id: item.sort_id,
-                    data: item_data,
+                    data: item_data.to_owned(),
                 },
             )?;
 
