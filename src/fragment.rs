@@ -20,12 +20,9 @@ pub fn page(title: &str, content: Markup) -> Markup {
 
     pub(crate) fn header() -> Markup {
         html! {
-            header ."container flex mx-auto" {
-                    nav ."column p-6" {
-                        a href="/" ."p-6 text-primary" { "Home" }
-                        a href="/" ."p-6" { "Home2" }
-                    }
-                    ."p-6" {
+            header ."container py-5 flex flex-row place-content-center gap-6 items-center" {
+                    div ."uppercase" { "Much Better Jira" }
+                    ."" {
                         img src="/favicon.ico" style="image-rendering: pixelated;" alt="dpc's avatar image";
                     }
             }
@@ -66,8 +63,8 @@ impl Service {
         Ok(page(
             "home",
             html! {
-                div ."container flex flex-col md:flex-row-reverse" {
-                    (item_edit_form(item))
+                div ."container flex flex-col md:flex-row" {
+                    (item_edit_form(item, None))
                     div ."container shrink grow p-1" {
                         (Item::items_form("items", &self.read_items()?))
                     }
@@ -80,26 +77,15 @@ impl Service {
 impl Item {
     pub fn items_form(dom_id: &str, items: &[Item]) -> Markup {
         html! {
-            div #(dom_id) {
-                form ."items-new flex" hx-post="/item" hx-target="closest div" hx-swap="outerHTML" {
-                    input ."border shadow-inner shadow-gray-400 rounded m-1 p-1 rounded w-full" type="text" name="title" value="" autocomplete="off" {}
-                    input ."border shadow-inner shadow-gray-400 rounded m-1 p-1 rounded w-full" type="text" name="body" value="" autocomplete="off" {}
+            div #(dom_id) ."sortable border-1 border-solid rounded-sm divide-y divide-solid shadow shadow-black"  hx-post="/item/order" hx-trigger="changed" hx-swap="none" {
+
+                form ."items-new flex" hx-post="/item" hx-target="closest div" hx-swap="outerHTML" hx-indicator={"#item-edit, #"(dom_id)} {
+                    input ."border shadow-inner shadow-gray-400 rounded m-1 p-1 rounded w-full" type="text" name="title" value="" placeholder="New..." autocomplete="off" {}
                     input ."hidden" type="submit" {}
                 }
 
-                (Self::items_sortable_list(items))
-            }
-        }
-    }
-
-    pub fn items_sortable_list(items: &[Item]) -> Markup {
-        html! {
-            div ."m-1" hx-post="/item/order" hx-trigger="changed" hx-swap="none" {
-                div ."htmx-indicator" {  "Updating..." }
-                div ."sortable border-1 border-solid rounded-sm divide-y divide-solid shadow shadow-black" {
-                    @for item in items {
-                        (item.items_sortable_row())
-                    }
+                @for item in items {
+                    (item.items_sortable_row())
                 }
             }
         }
@@ -107,9 +93,9 @@ impl Item {
 
     pub fn items_sortable_row(&self) -> Markup {
         html! {
-            div."container p-1 even:bg-slate-50 group flex justify-between gap-1" #{ (self.id) } {
-                div.handle { "<>" };
-                div."w-full" hx-trigger="click" hx-get={ "/item/" (self.id) } hx-push-url="true" hx-select="#item-edit" hx-target="#item-edit" hx-swap="outerHTML" {
+            div."draggable container p-1 even:bg-slate-50 group flex justify-between gap-1" #{ (self.id) } {
+                div .handle { "<>" };
+                div ."w-full" hx-trigger="click" hx-get={ "/item/" (self.id) } hx-push-url="true" hx-select="#item-edit" hx-target="#item-edit" hx-indicator="#item-edit" hx-swap="outerHTML" {
                      span ."group-hover:underline" {
                          (self.data.title)
                      }
@@ -119,11 +105,24 @@ impl Item {
     }
 }
 
-pub fn item_edit_form(item: Option<(ItemId, ItemData)>) -> Markup {
+pub fn item_edit_form(item: Option<(ItemId, ItemData)>, hx_swap_oob_id: Option<&str>) -> Markup {
     html! {
         @if let Some((item_id, item_data)) = item {
-            form #item-edit ."container p-1"  hx-post={ "/item/" (item_id) } hx-trigger="submit, click from:find button, keydown[ctrlKey && keyCode==13]" hx-target="#items" hx-select="#items" hx-swap="outerHTML" {
-                input type="text" name="title" placeholder="Title..." ."border shadow-inner shadow-gray-400 rounded my-1 py-1 px-2 w-full" value=(item_data.title);
+            form
+                id=@if let Some(oob) = hx_swap_oob_id {
+                    (oob)
+                } @else {
+                    "item-edit"
+                }
+                ."container p-1"
+                hx-post={ "/item/" (item_id) }
+                hx-trigger="submit, click from:find button, keydown[ctrlKey && keyCode==13]"
+                hx-target="#items"
+                hx-select="#items"
+                hx-swap="outerHTML"
+                hx-swap-oob=@if hx_swap_oob_id.is_some() { "outerHTML" }
+            {
+                input type="text" name="title" autofocus placeholder="Title..." ."border shadow-inner shadow-gray-400 rounded my-1 py-1 px-2 w-full" value=(item_data.title);
                 textarea  name="body" placeholder="Body..."  ."border shadow-inner shadow-gray-400 rounded my-1 py-1 px-2 h-24 w-full" { (item_data.body) }
                 button ."px-2 py-1 my-1 shadow-md bg-primary-btn rounded-md" { "Save" }
             }

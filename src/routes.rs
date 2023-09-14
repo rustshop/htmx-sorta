@@ -64,9 +64,10 @@ impl Service {
         _: &matchit::Params,
     ) -> anyhow::Result<astra::Response> {
         let item_data: ItemData = serde_urlencoded::from_reader(req.body_mut().reader())?;
-        self.create_item(item_data)?;
+        let item_id = self.create_item(item_data.clone())?;
         Ok(ResponseBuilder::new().body_html(html! {
             (Item::items_form("items", &self.read_items()?))
+            (fragment::item_edit_form(Some((item_id, item_data)), Some("item-edit")))
         }))
     }
 
@@ -77,7 +78,8 @@ impl Service {
     ) -> anyhow::Result<astra::Response> {
         let item_id = ItemId::from_str(params.get("id").expect("id param not in the path params"))?;
         let item_data = self.load_item(item_id)?;
-        Ok(ResponseBuilder::new().body_html(fragment::item_edit_form(Some((item_id, item_data)))))
+        Ok(ResponseBuilder::new()
+            .body_html(fragment::item_edit_form(Some((item_id, item_data)), None)))
     }
 
     pub fn favicon_ico(

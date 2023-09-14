@@ -1,6 +1,7 @@
 use std::net;
 use std::net::Ipv4Addr;
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::format_err;
 use db::{Item, ItemData, ItemId, ITEM_TABLE};
@@ -62,6 +63,9 @@ impl Service {
     }
 
     fn route(&self, req: &mut astra::Request) -> astra::Response {
+        if cfg!(debug_assertions) {
+            std::thread::sleep(Duration::from_millis(500));
+        }
         let path = req.uri().path().to_owned();
         let (handler, params) = match (match *req.method() {
             Method::GET => &self.router_get,
@@ -184,7 +188,7 @@ impl Service {
         Ok(SortId::in_front(existing_first.as_ref()))
     }
 
-    pub fn create_item(&self, item_data: ItemData) -> anyhow::Result<()> {
+    pub fn create_item(&self, item_data: ItemData) -> anyhow::Result<ItemId> {
         self.db.write_with(|dbtx| {
             let mut item_order_table = dbtx.open_table(ITEM_ORDER_TABLE)?;
             let sort_id = self.get_front_item_sort_id(&item_order_table)?;
@@ -199,7 +203,7 @@ impl Service {
                 },
             )?;
             item_order_table.insert(sort_id, item_id)?;
-            Ok(())
+            Ok(item_id)
         })
     }
 

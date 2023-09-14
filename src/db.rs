@@ -118,6 +118,7 @@ pub struct ItemValue {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ItemData {
     pub title: String,
+    #[serde(default)]
     pub body: String,
 }
 
