@@ -46,8 +46,7 @@ I don't like DSL, especially looking like combination of Python and HTML, so
 
 I'm tired of all the SPAs that are slow heavy and barely work. I'm more of a backend
 developer than a frontend developer. I think HTMX is the direction that Web
-should have taken long time ago, instead of betting everything on Javascript
-(which is and will always be terrible programming language). I'm not afraid of
+should have taken long time ago, instead of betting everything on Javascript. I'm not afraid of
 adding JS to the code, but it shouldn't be for UX niceness and not the tail wagging
 the dog.
 
