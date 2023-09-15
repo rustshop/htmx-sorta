@@ -66,7 +66,7 @@ near future. [The developer is working on it](https://github.com/ibraheemdev/ast
 
 The Nix dev shell I'm using sets up automatically [some cool git hooks](https://github.com/dpc/htmx-sorta/tree/c2d300caafa6a3d72eb7eefcb766b669676ca803/misc/git-hooks). I keep using it in many projects. It includes `semgrep`, `typos` (checking typos), `convco` (conventional commits), linters, and some Rust specific checks.
 
-[`lld` is used to speed up linking, with symbol compression enabled](https://github.com/dpc/htmx-sorta/blob/c2d300caafa6a3d72eb7eefcb766b669676ca803/.cargo/config.toml) to make the binary smaller (`6.3 MiB` ATM).
+[`mold` is used to speed up linking, with symbol compression enabled](https://github.com/dpc/htmx-sorta/blob/bc77241ca98e06c7a65e768467d34cbf8bfa8b50/.cargo/config.toml) to make the binary smaller (`6.3 MiB` ATM).
 
 I've "invented" [a variable-length sorting key approach, that simplifies
 item sorting.](https://github.com/dpc/htmx-sorta/blob/c2d300caafa6a3d72eb7eefcb766b669676ca803/src/sortid.rs)
