@@ -1,2 +1,2 @@
 [build]
-rustflags = ["-C", "link-arg=-Wl,--compress-debug-sections=zlib,-fuse-ld=lld"]
+rustflags = ["-C", "link-arg=-fuse-ld=lld", "-C", "link-arg=-Wl,--compress-debug-sections=zlib"]
