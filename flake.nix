@@ -61,7 +61,7 @@
 
             nativeBuildInputs = builtins.attrValues
               {
-                inherit (pkgs) lld;
+                inherit (pkgs) lld mold;
               } ++ [ ];
           };
       in
