@@ -5,7 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
     flake-utils.url = "github:numtide/flake-utils";
     crane = {
-      url = "github:ipetkov/crane";
+      url = "github:dpc/crane?rev=afdf9ab92ed2880c4e39aba5106677e3385717f4";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     fenix = {
@@ -56,6 +56,9 @@
                 (craneLib.filterCargoSources path type)
               ;
             };
+
+            installCargoArtifactsMode = "use-zstd";
+
 
             buildInputs = [ ];
 
