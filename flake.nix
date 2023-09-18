@@ -23,6 +23,10 @@
         lib = pkgs.lib;
         extLib = import ./nix/lib.nix { inherit lib; };
 
+        # `moreutils/bin/parallel` and `parallel/bin/parallel` conflict, so just use
+        # the binary we need from `moreutils`
+        moreutils-ts = pkgs.writeShellScriptBin "ts" "exec ${pkgs.moreutils}/bin/ts \"$@\"";
+
         fenixChannel = fenix.packages.${system}.stable;
         fenixChannelNightly = fenix.packages.${system}.latest;
 
@@ -32,6 +36,11 @@
           "clippy"
           "rust-analysis"
           "rust-src"
+        ]);
+
+        fenixToolchainNightly = (fenixChannelNightly.withComponents [
+          "rustfmt"
+          "cargo"
         ]);
 
         fenixToolchainRustfmt = (fenixChannelNightly.withComponents [
@@ -107,6 +116,21 @@
 
               >&2 echo "💡 Run 'just' for a list of available 'just ...' helper recipes"
             '';
+          };
+
+          lint = pkgs.mkShell {
+            nativeBuildInputs = with pkgs; [
+              fenixToolchainNightly
+              nixpkgs-fmt
+              shellcheck
+              git
+              parallel
+              typos
+              moreutils-ts
+              nix
+            ] ++ lib.optionals (!pkgs.stdenv.isDarwin) [
+              semgrep
+            ];
           };
         };
       }
