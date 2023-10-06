@@ -1,5 +1,5 @@
 {
-  description = "dpc's basic flake template";
+  description = "Rust + htmx + tailwind + nix + redb + twind demo web app";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -16,26 +16,46 @@
         pkgs = import nixpkgs {
           inherit system;
         };
+        projectName = "htmx-sorta";
 
-        flakeboxLib = flakebox.lib.${system} { };
-        craneLib = flakeboxLib.craneLib;
+        flakeboxLib = flakebox.lib.${system} {
+          config = {
+            github.ci.buildOutputs = [ ".#ci.htmx-sorta" ];
+          };
+        };
 
-        src = flakeboxLib.filter.filterSubdirs {
+        buildPaths = [
+          "Cargo.toml"
+          "Cargo.lock"
+          ".cargo"
+          "src"
+          "static"
+        ];
+
+        buildSrc = flakeboxLib.filterSubPaths {
           root = builtins.path {
-            name = "htmx-demo";
+            name = projectName;
             path = ./.;
           };
-          dirs = [
-            "Cargo.toml"
-            "Cargo.lock"
-            ".cargo"
-            "src"
-            "static"
-          ];
+          paths = buildPaths;
         };
+
+        multiBuild =
+          (flakeboxLib.craneMultiBuild { }) (craneLib':
+            let
+              craneLib = (craneLib'.overrideArgs {
+                pname = "flexbox-multibuild";
+                src = buildSrc;
+              });
+            in
+            {
+              htmx-sorta = craneLib.buildPackage { };
+            });
       in
       {
-        packages.default = craneLib.buildPackage { inherit src; };
+        packages.default = multiBuild.htmx-sorta;
+
+        legacyPackages = multiBuild;
 
         devShells = {
           default = flakeboxLib.mkDevShell {
