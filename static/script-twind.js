@@ -10,6 +10,9 @@ install(
         colors: {
           primary: "var(--primary-color)",
           "primary-btn": "var(--primary-btn-color)",
+          "custom-white": "var(--custom-white-color)",
+          "shade": "var(--shade-color)",
+          "shade-02": "var(--shade-02-color)",
         },
       }
     },

@@ -24,7 +24,7 @@ fn main() -> anyhow::Result<()> {
 
     let opts = opts::Opts::parse();
 
-    let service = Service::new(&opts)?;
+    let service = Service::new(opts.clone())?;
 
     let server = astra::Server::bind(opts.listen);
 

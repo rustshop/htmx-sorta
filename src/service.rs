@@ -29,6 +29,7 @@ type State = ();
 
 #[derive(Clone)]
 pub struct Service {
+    opts: opts::Opts,
     _state: Arc<State>,
     db: Database,
     router_get: Router,
@@ -38,7 +39,7 @@ pub struct Service {
 }
 
 impl Service {
-    pub fn new(opts: &opts::Opts) -> anyhow::Result<Self> {
+    pub fn new(opts: opts::Opts) -> anyhow::Result<Self> {
         let mut router_get = Router::new();
         let mut router_post = Router::new();
         router_get.insert("/", Self::home)?;
@@ -54,6 +55,7 @@ impl Service {
         Self {
             _state: Default::default(),
             db: Database::open(&opts.db)?,
+            opts,
             router_get,
             router_post,
             pre_rate_limiter: pre::FastPreRateLimiter::new(20, 60),
@@ -63,7 +65,7 @@ impl Service {
     }
 
     fn route(&self, req: &mut astra::Request) -> astra::Response {
-        if cfg!(debug_assertions) {
+        if self.opts.debug_delay {
             std::thread::sleep(Duration::from_millis(500));
         }
         let path = req.uri().path().to_owned();
@@ -78,7 +80,7 @@ impl Service {
                 let params = params.to_owned();
                 (value, params)
             }
-            // Otherwise return a 404
+            // Otherwise, return a 404
             Err(_) => return routes::not_found_404(),
         };
 
