@@ -6,15 +6,6 @@ license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[profile.dev]
-debug = "line-tables-only"
-lto = "off"
-
-[profile.release]
-debug = "line-tables-only"
-lto = "fat"
-codegen-units = 1
-
 [dependencies]
 anyhow = "1.0.75"
 astra = { git = "https://github.com/dpc/astra", rev = "f135e4c8be0409d371218669bcdb13566f35f116" }
@@ -36,3 +27,27 @@ serde_urlencoded = "0.7.1"
 [dev-dependencies]
 quickcheck = "1.0.3"
 quickcheck_macros = "1.0.0"
+
+
+
+[profile.dev]
+debug = "line-tables-only"
+lto = "off"
+
+[profile.ci]
+inherits = "dev"
+incremental = false
+
+[profile.release]
+debug = "line-tables-only"
+lto = "fat"
+codegen-units = 1
+
+# Workaround: https://github.com/rust-lang/cargo/issues/12457 which causes
+#             https://github.com/ipetkov/crane/issues/370
+[profile.dev.build-override]
+debug = false
+[profile.ci.build-override]
+debug = false
+[profile.release.build-override]
+debug = false
