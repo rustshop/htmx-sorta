@@ -93,7 +93,7 @@ impl Item {
 
     pub fn items_sortable_row(&self) -> Markup {
         html! {
-            div."draggable container p-1 even:bg-slate-50 group flex justify-between gap-1" #{ (self.id) } {
+            div."draggable container p-1 even:bg-shade-02 group flex justify-between gap-1" #{ (self.id) } {
                 div .handle { "<>" };
                 div ."w-full" hx-trigger="click" hx-get={ "/item/" (self.id) } hx-push-url="true" hx-select="#item-edit" hx-target="#item-edit" hx-indicator="#item-edit" hx-swap="outerHTML" {
                      span ."group-hover:underline" {
@@ -124,7 +124,7 @@ pub fn item_edit_form(item: Option<(ItemId, ItemData)>, hx_swap_oob_id: Option<&
             {
                 input type="text" name="title" autofocus placeholder="Title..." ."border shadow-inner shadow-gray-400 rounded my-1 py-1 px-2 w-full" value=(item_data.title);
                 textarea  name="body" placeholder="Body..."  ."border shadow-inner shadow-gray-400 rounded my-1 py-1 px-2 h-24 w-full" { (item_data.body) }
-                button ."px-2 py-1 my-1 shadow-md bg-primary-btn rounded-md" { "Save" }
+                button ."px-2 py-1 my-1 shadow-md bg-primary-btn text-custom-white rounded-md" { "Save" }
             }
         } @else {
             form #item-edit ."container hidden" {
