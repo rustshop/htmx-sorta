@@ -5,21 +5,18 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     flakebox = {
-      url = "github:rustshop/flakebox?rev=1e4cce8057d7d68798147ab18cf7ad2ab16506b8";
+      url = "github:rustshop/flakebox?rev=d60061baec213962a897fe117e19ce1996c7f0a2";
     };
   };
 
   outputs = { self, nixpkgs, flake-utils, flakebox }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = import nixpkgs {
-          inherit system;
-        };
         projectName = "htmx-sorta";
 
         flakeboxLib = flakebox.lib.${system} {
           config = {
-            github.ci.buildOutputs = [ ".#ci.htmx-sorta" ];
+            github.ci.buildOutputs = [ ".#ci.${projectName}" ];
           };
         };
 
@@ -43,17 +40,17 @@
           (flakeboxLib.craneMultiBuild { }) (craneLib':
             let
               craneLib = (craneLib'.overrideArgs {
-                pname = "flexbox-multibuild";
+                pname = projectName;
                 src = buildSrc;
                 nativeBuildInputs = [ ];
               });
             in
             {
-              htmx-sorta = craneLib.buildPackage { };
+              ${projectName} = craneLib.buildPackage { };
             });
       in
       {
-        packages.default = multiBuild.htmx-sorta;
+        packages.default = multiBuild.${projectName};
 
         legacyPackages = multiBuild;
 

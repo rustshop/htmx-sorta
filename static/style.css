@@ -1,10 +1,10 @@
 :root {
   --primary-hue: 271;
-  --primary-color: oklch(50.00% 0.22 var(--primary-hue));
-  --primary-color-50: oklch(50.00% 0.159 262.25);
+  --primary-color: oklch(50.00% 62% var(--primary-hue));
+  --primary-color-50: oklch(50.00% 15.9% 262.25);
   --primary-btn-color: var(--primary-color);
-  --shade-color: oklch(95.00% 0.02 var(--primary-hue));
-  --shade-02-color: oklch(99.00% 0.005 var(--primary-hue));
+  --shade-color: oklch(95.00% 2% var(--primary-hue));
+  --shade-02-color: oklch(99.00% 0.5% var(--primary-hue));
   --custom-white-color: #fff;
 }
 
