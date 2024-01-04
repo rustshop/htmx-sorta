@@ -52,8 +52,10 @@ the dog.
 
 I'm not much of a designer or a web developer, but I've did some web projects
 over last two decades, and I wholeheartly agree with Tailwind philosophy.
-Unfortunately it doesn't have a great Rust/maud integration, so I use
-`twind` as a client-side Tailwind JIT instead.
+At the time of writing I wasn't aware how to integrate tailwind with maud well,
+so I used `twind` as a client-side Tailwind JIT instead.
+[But I was told recently that maud + tailwind might Just Work](https://github.com/rustshop/htmx-sorta/discussions/11),
+so I might update to this approach soon (PRs always welcome :D).
 
 ### Points of Interest
 
