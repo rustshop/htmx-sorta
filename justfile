@@ -12,55 +12,87 @@ default:
 
 
 # run `cargo build` on everything
-build:
-  cargo build --workspace --all-targets
+build *ARGS="--workspace --all-targets":
+  #!/usr/bin/env bash
+  set -euo pipefail
+  if [ ! -f Cargo.toml ]; then
+    cd {{invocation_directory()}}
+  fi
+  cargo build {{ARGS}}
 
 
 # run `cargo check` on everything
-check:
-  cargo check --workspace --all-targets
+check *ARGS="--workspace --all-targets":
+  #!/usr/bin/env bash
+  set -euo pipefail
+  if [ ! -f Cargo.toml ]; then
+    cd {{invocation_directory()}}
+  fi
+  cargo check {{ARGS}}
 
 
 # run all checks recommended before opening a PR
 final-check: lint clippy
+  #!/usr/bin/env bash
+  set -euo pipefail
+  if [ ! -f Cargo.toml ]; then
+    cd {{invocation_directory()}}
+  fi
   cargo test --doc
   just test
 
 
 # run code formatters
 format:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  if [ ! -f Cargo.toml ]; then
+    cd {{invocation_directory()}}
+  fi
   cargo fmt --all
   nixpkgs-fmt $(echo **.nix)
 
 
 # run lints (git pre-commit hook)
 lint:
+  #!/usr/bin/env bash
+  set -euo pipefail
   env NO_STASH=true $(git rev-parse --git-common-dir)/hooks/pre-commit
 
 
 # run tests
 test: build
+  #!/usr/bin/env bash
+  set -euo pipefail
+  if [ ! -f Cargo.toml ]; then
+    cd {{invocation_directory()}}
+  fi
   cargo test
 
 
 # run and restart on changes
-watch:
-  env RUST_LOG=${RUST_LOG:-debug} cargo watch -x run
+watch *ARGS="-x run":
+  #!/usr/bin/env bash
+  set -euo pipefail
+  if [ ! -f Cargo.toml ]; then
+    cd {{invocation_directory()}}
+  fi
+  env RUST_LOG=${RUST_LOG:-debug} cargo watch {{ARGS}}
 
 
 # run `cargo clippy` on everything
-clippy:
-  cargo clippy --locked --offline --workspace --all-targets -- --deny warnings --allow deprecated
+clippy *ARGS="--locked --offline --workspace --all-targets":
+  cargo clippy {{ARGS}} -- --deny warnings --allow deprecated
 
 # run `cargo clippy --fix` on everything
-clippy-fix:
-  cargo clippy --locked --offline --workspace --all-targets --fix
+clippy-fix *ARGS="--locked --offline --workspace --all-targets":
+  cargo clippy {{ARGS}} --fix
 
 
 # run `semgrep`
 semgrep:
   env SEMGREP_ENABLE_VERSION_CHECK=0 \
-    semgrep --error --config .config/semgrep.yaml
+    semgrep --error --no-rewrite-rule-ids --config .config/semgrep.yaml
 
 
 # check typos
