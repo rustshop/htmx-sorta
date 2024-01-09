@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+:root {
+  --primary-hue: 271;
+  --primary-color: oklch(50.00% 62% var(--primary-hue));
+  --primary-color-50: oklch(50.00% 15.9% 262.25);
+  --primary-btn-color: var(--primary-color);
+  --shade-color: oklch(95.00% 2% var(--primary-hue));
+  --shade-02-color: oklch(99.00% 0.5% var(--primary-hue));
+  --custom-white-color: #fff;
+}
+
+
+div.htmx-request,
+form.htmx-request
+{
+   opacity: 0.5;
+}

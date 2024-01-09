@@ -1,0 +1,2 @@
+tailwind-watch:
+	tailwindcss -i ./src/style.css -o ./static/tailwind.css --watch

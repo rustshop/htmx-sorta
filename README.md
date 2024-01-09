@@ -8,7 +8,7 @@ A demo project where I learn and play with my "Rust web stack":
 * [astra](https://github.com/ibraheemdev/astra) Rust web server library
 * [maud](https://github.com/lambda-fairy/maud) Rust html templating library
 * [htmx](https://htmx.org/) for dynamic html frontend
-* [tailwind](https://tailwindcss.com/) via [twind](https://twind.style/) for CSS styling
+* [tailwind](https://tailwindcss.com/)
 
 In essence it's a TODO app, and looks like this (click for a video):
 
@@ -50,12 +50,12 @@ should have taken long time ago, instead of betting everything on Javascript. I'
 adding JS to the code, but it shouldn't be for UX niceness and not the tail wagging
 the dog.
 
-I'm not much of a designer or a web developer, but I've did some web projects
-over last two decades, and I wholeheartly agree with Tailwind philosophy.
+I'm not much of a designer or a web developer, but I've done some web projects
+over last two decades, and I wholeheartedly agree with Tailwind philosophy.
 At the time of writing I wasn't aware how to integrate tailwind with maud well,
 so I used `twind` as a client-side Tailwind JIT instead.
-[But I was told recently that maud + tailwind might Just Work](https://github.com/rustshop/htmx-sorta/discussions/11),
-so I might update to this approach soon (PRs always welcome :D).
+[But I was told that maud + tailwind Just Works](https://github.com/rustshop/htmx-sorta/discussions/11),
+and switched to this approach.
 
 ### Points of Interest
 

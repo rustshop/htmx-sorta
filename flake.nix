@@ -2,7 +2,7 @@
   description = "Rust + htmx + tailwind + nix + redb + twind demo web app";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
     flake-utils.url = "github:numtide/flake-utils";
     flakebox = {
       url = "github:rustshop/flakebox?rev=d60061baec213962a897fe117e19ce1996c7f0a2";
@@ -14,9 +14,14 @@
       let
         projectName = "htmx-sorta";
 
+        pkgs = nixpkgs.legacyPackages.${system};
+
         flakeboxLib = flakebox.lib.${system} {
           config = {
             github.ci.buildOutputs = [ ".#ci.${projectName}" ];
+            just.includePaths = [
+              "justfile.custom"
+            ];
           };
         };
 
@@ -56,7 +61,7 @@
 
         devShells = {
           default = flakeboxLib.mkDevShell {
-            packages = [ ];
+            packages = [ pkgs.tailwindcss ];
             nativeBuildInputs = [ ];
           };
         };
