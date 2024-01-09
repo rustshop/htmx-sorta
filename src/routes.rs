@@ -118,7 +118,6 @@ impl Service {
             .body_static_str(
                 "application/javascript",
                 concat!(
-                    include_str!("../static/script-twind.js"),
                     include_str!("../static/script.js"),
                     include_str!("../static/script-htmx-send-error.js"),
                 ),
