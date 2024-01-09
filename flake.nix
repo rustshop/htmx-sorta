@@ -19,6 +19,9 @@
         flakeboxLib = flakebox.lib.${system} {
           config = {
             github.ci.buildOutputs = [ ".#ci.${projectName}" ];
+            just.includePaths = [
+              "justfile.custom"
+            ];
           };
         };
 
