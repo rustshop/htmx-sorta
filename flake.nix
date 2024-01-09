@@ -5,7 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
     flake-utils.url = "github:numtide/flake-utils";
     flakebox = {
-      url = "github:rustshop/flakebox?rev=d60061baec213962a897fe117e19ce1996c7f0a2";
+      url = "github:rustshop/flakebox?rev=b141d3c7640a7f6fff8da2dec50a72bcbed15056";
     };
   };
 
@@ -59,11 +59,9 @@
 
         legacyPackages = multiBuild;
 
-        devShells = {
-          default = flakeboxLib.mkDevShell {
-            packages = [ pkgs.tailwindcss ];
-            nativeBuildInputs = [ ];
-          };
+        devShells = flakeboxLib.mkShells {
+          packages = [ ];
+          nativeBuildInputs = [ pkgs.tailwindcss ];
         };
       }
     );
