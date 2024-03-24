@@ -4,7 +4,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::{bail, Context};
-use redb::{ReadTransaction, TableDefinition, WriteTransaction};
+use redb::{Key, ReadTransaction, TableDefinition, WriteTransaction};
 use serde::{Deserialize, Serialize};
 
 use crate::sortid::SortId;
@@ -52,6 +52,18 @@ impl Database {
 
 #[derive(Debug, Clone, Copy)]
 pub struct ItemId(pub u64);
+
+impl AsRef<u64> for ItemId {
+    fn as_ref(&self) -> &u64 {
+        &self.0
+    }
+}
+
+impl From<u64> for ItemId {
+    fn from(value: u64) -> Self {
+        Self(value)
+    }
+}
 
 impl ItemId {
     pub(crate) fn increment(&self) -> Self {
@@ -122,104 +134,36 @@ pub struct ItemData {
     pub body: String,
 }
 
-pub const ITEM_TABLE: TableDefinition<ItemId, ItemValue> = TableDefinition::new("item");
+pub const ITEM_TABLE: TableDefinition<ItemId, redb::AsBincode<ItemValue>> =
+    TableDefinition::new("item");
 pub const ITEM_ORDER_TABLE: TableDefinition<SortId, ItemId> = TableDefinition::new("item_order");
 
-impl redb::Key for ItemId {
+impl redb::AsRaw for ItemId {
+    type Raw = u64;
+}
+
+impl Key for ItemId {
     fn compare(data1: &[u8], data2: &[u8]) -> std::cmp::Ordering {
         data1.cmp(data2)
     }
 }
 
+impl redb::AsRaw for SortId {
+    type Raw = Vec<u8>;
+}
+
 impl redb::Key for SortId {
     fn compare(data1: &[u8], data2: &[u8]) -> std::cmp::Ordering {
-        SortId::cmp_raw(data1, data2)
+        data1.cmp(data2)
     }
 }
-
-impl redb::Value for SortId {
-    type SelfType<'a> = SortId;
-
-    type AsBytes<'a> = &'a [u8];
-
-    fn fixed_width() -> Option<usize> {
-        None
-    }
-
-    fn from_bytes<'a>(data: &'a [u8]) -> Self::SelfType<'a>
-    where
-        Self: 'a,
-    {
-        SortId::from(data.to_vec())
-    }
-
-    fn as_bytes<'a, 'b: 'a>(value: &'a Self::SelfType<'b>) -> Self::AsBytes<'a>
-    where
-        Self: 'a,
-        Self: 'b,
-    {
-        value.as_bytes()
-    }
-
-    fn type_name() -> redb::TypeName {
-        redb::TypeName::new("sort-id")
-    }
+impl redb::Name for SortId {
+    const NAME: &'static str = "sort-id";
+}
+impl redb::Name for ItemId {
+    const NAME: &'static str = "item-id";
 }
 
-impl redb::Value for ItemId {
-    type SelfType<'a> = ItemId;
-
-    type AsBytes<'a> = [u8; 8];
-
-    fn fixed_width() -> Option<usize> {
-        u64::fixed_width()
-    }
-
-    fn from_bytes<'a>(data: &'a [u8]) -> Self::SelfType<'a>
-    where
-        Self: 'a,
-    {
-        Self(u64::from_bytes(data))
-    }
-
-    fn as_bytes<'a, 'b: 'a>(value: &'a Self::SelfType<'b>) -> Self::AsBytes<'a>
-    where
-        Self: 'a,
-        Self: 'b,
-    {
-        u64::as_bytes(&value.0)
-    }
-
-    fn type_name() -> redb::TypeName {
-        redb::TypeName::new("item-id")
-    }
-}
-
-impl redb::Value for ItemValue {
-    type SelfType<'a> = ItemValue;
-
-    type AsBytes<'a> = Vec<u8>;
-
-    fn fixed_width() -> Option<usize> {
-        None
-    }
-
-    fn from_bytes<'a>(data: &'a [u8]) -> Self::SelfType<'a>
-    where
-        Self: 'a,
-    {
-        bincode::deserialize(data).expect("bincode deserialization error")
-    }
-
-    fn as_bytes<'a, 'b: 'a>(value: &'a Self::SelfType<'b>) -> Self::AsBytes<'a>
-    where
-        Self: 'a,
-        Self: 'b,
-    {
-        bincode::serialize(value).expect("bincode serialization error")
-    }
-
-    fn type_name() -> redb::TypeName {
-        redb::TypeName::new("item-value")
-    }
+impl redb::Name for ItemValue {
+    const NAME: &'static str = "item-value";
 }

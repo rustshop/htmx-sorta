@@ -9,12 +9,15 @@ use serde::{Deserialize, Serialize};
 /// always larger than 0x7f, but smaller than 0x80. This way it's always
 /// possible to find a key between two other keys, which is handy for
 /// sorting things in a database.
-pub struct SortId(Vec<u8>);
+pub struct SortId(pub Vec<u8>);
 
-impl SortId {
-    pub fn as_bytes(&self) -> &[u8] {
+impl AsRef<Vec<u8>> for SortId {
+    fn as_ref(&self) -> &Vec<u8> {
         &self.0
     }
+}
+
+impl SortId {
     pub fn cmp_raw(s: &[u8], other: &[u8]) -> cmp::Ordering {
         let mut s = s.iter().copied();
         let mut o = other.iter().copied();

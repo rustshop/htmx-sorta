@@ -166,7 +166,7 @@ impl Service {
 
     pub fn get_last_item_id(
         &self,
-        items_table: &Table<'_, ItemId, ItemValue>,
+        items_table: &Table<'_, ItemId, redb::AsBincode<ItemValue>>,
     ) -> anyhow::Result<ItemId> {
         Ok(if let Some(res) = items_table.iter()?.next_back() {
             let res = res?;
