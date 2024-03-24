@@ -17,7 +17,7 @@ maud = { version = "0.25.0", features = [ "axum" ] }
 matchit = "0.7.2"
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
-redb = "1.1.0"
+redb = "2.0.0"
 tap = "1.0.1"
 serde = { version = "1.0.188", features = ["derive"] }
 resiter = "0.5.0"

@@ -5,7 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
     flake-utils.url = "github:numtide/flake-utils";
     flakebox = {
-      url = "github:rustshop/flakebox?rev=b141d3c7640a7f6fff8da2dec50a72bcbed15056";
+      url = "github:rustshop/flakebox?rev=84304c4690f11e225287e3cc042281cbeb34d9a3";
     };
   };
 
@@ -19,7 +19,7 @@
         flakeboxLib = flakebox.lib.${system} {
           config = {
             github.ci.buildOutputs = [ ".#ci.${projectName}" ];
-            just.includePaths = [
+            just.importPaths = [
               "justfile.custom"
             ];
           };

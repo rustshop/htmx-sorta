@@ -166,7 +166,7 @@ impl Service {
 
     pub fn get_last_item_id(
         &self,
-        items_table: &Table<'_, '_, ItemId, ItemValue>,
+        items_table: &Table<'_, ItemId, ItemValue>,
     ) -> anyhow::Result<ItemId> {
         Ok(if let Some(res) = items_table.iter()?.next_back() {
             let res = res?;
@@ -178,7 +178,7 @@ impl Service {
 
     pub fn get_front_item_sort_id(
         &self,
-        items_order_table: &Table<'_, '_, SortId, ItemId>,
+        items_order_table: &Table<'_, SortId, ItemId>,
     ) -> anyhow::Result<SortId> {
         let existing_first = if let Some(existing_first) = items_order_table.iter()?.next() {
             let existing_first = existing_first?;

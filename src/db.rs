@@ -4,7 +4,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::{bail, Context};
-use redb::{ReadTransaction, RedbKey, RedbValue, TableDefinition, WriteTransaction};
+use redb::{ReadTransaction, TableDefinition, WriteTransaction};
 use serde::{Deserialize, Serialize};
 
 use crate::sortid::SortId;
@@ -21,7 +21,7 @@ impl From<redb::Database> for Database {
 impl Database {
     pub fn write_with<R>(
         &self,
-        f: impl FnOnce(&'_ WriteTransaction<'_>) -> anyhow::Result<R>,
+        f: impl FnOnce(&'_ WriteTransaction) -> anyhow::Result<R>,
     ) -> anyhow::Result<R> {
         let mut dbtx = self.0.begin_write()?;
 
@@ -34,7 +34,7 @@ impl Database {
 
     pub fn read_with<R>(
         &self,
-        f: impl FnOnce(&'_ ReadTransaction<'_>) -> anyhow::Result<R>,
+        f: impl FnOnce(&'_ ReadTransaction) -> anyhow::Result<R>,
     ) -> anyhow::Result<R> {
         let mut dbtx = self.0.begin_read()?;
 
@@ -125,19 +125,19 @@ pub struct ItemData {
 pub const ITEM_TABLE: TableDefinition<ItemId, ItemValue> = TableDefinition::new("item");
 pub const ITEM_ORDER_TABLE: TableDefinition<SortId, ItemId> = TableDefinition::new("item_order");
 
-impl RedbKey for ItemId {
+impl redb::Key for ItemId {
     fn compare(data1: &[u8], data2: &[u8]) -> std::cmp::Ordering {
         data1.cmp(data2)
     }
 }
 
-impl RedbKey for SortId {
+impl redb::Key for SortId {
     fn compare(data1: &[u8], data2: &[u8]) -> std::cmp::Ordering {
         SortId::cmp_raw(data1, data2)
     }
 }
 
-impl RedbValue for SortId {
+impl redb::Value for SortId {
     type SelfType<'a> = SortId;
 
     type AsBytes<'a> = &'a [u8];
@@ -166,7 +166,7 @@ impl RedbValue for SortId {
     }
 }
 
-impl RedbValue for ItemId {
+impl redb::Value for ItemId {
     type SelfType<'a> = ItemId;
 
     type AsBytes<'a> = [u8; 8];
@@ -195,7 +195,7 @@ impl RedbValue for ItemId {
     }
 }
 
-impl RedbValue for ItemValue {
+impl redb::Value for ItemValue {
     type SelfType<'a> = ItemValue;
 
     type AsBytes<'a> = Vec<u8>;
